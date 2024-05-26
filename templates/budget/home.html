@@ -1,0 +1,20 @@
+<!-- budget/templates/budget/home.html -->
+
+{% extends 'budget/base.html' %}
+{% load bootstrap5 %}
+{% block content %}
+<h2>Home</h2>
+<div>
+    
+    <h3>Total Amount Spent in Last 30 Days: ₹ {{ total_spent_last_30_days }}</h3>
+</div>
+<div>
+    <h3>Recent Transactions</h3>
+    <ul>
+        {% for transaction in recent_transactions %}
+        <li>{{ transaction.date }} - {{ transaction.category }} - {{ transaction.amount }}</li>
+        {% endfor %}
+    </ul>
+</div>
+<!-- Add spending charts or any other content you want to display -->
+{% endblock %}
