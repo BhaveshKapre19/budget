@@ -12,8 +12,15 @@ class UserRegisterForm(UserCreationForm):
         model = User
         fields = ['username', 'email', 'password1', 'password2']
 
+
 class TransactionForm(forms.ModelForm):
-    date = forms.DateField(widget=forms.DateInput(attrs={'class': 'datepicker','type': 'date'}))
+    date = forms.DateField(widget=forms.DateInput(attrs={'class': 'datepicker', 'type': 'date'}))
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['type'].widget = forms.Select(choices=Transaction.TRANSACTION_TYPE)
+        self.fields['mode'] = forms.ChoiceField(choices=Transaction.TRANSACTION_MODE)
+
     class Meta:
         model = Transaction
-        fields = ['category', 'type', 'amount', 'description','date']
+        fields = ['bank', 'category', 'type', 'mode', 'amount', 'description', 'date']

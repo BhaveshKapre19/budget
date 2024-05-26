@@ -1,5 +1,5 @@
 # budget/views.py
-
+from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.messages.views import SuccessMessageMixin
 from django.urls import reverse_lazy
@@ -14,6 +14,7 @@ from datetime import timedelta
 from django.http import HttpResponse
 from django.template.loader import get_template
 from xhtml2pdf import pisa
+
 
 class HomeView(LoginRequiredMixin, TemplateView):
     template_name = 'budget/home.html'
@@ -105,6 +106,19 @@ class TransactionCreateView(LoginRequiredMixin, SuccessMessageMixin, CreateView)
 
     def form_valid(self, form):
         form.instance.user = self.request.user
+        # Check if it's an expense transaction
+        if form.instance.type == 'expense':
+            # Get the bank balance
+            bank_balance = form.instance.bank.balance
+
+            # Get the amount of the transaction
+            transaction_amount = form.cleaned_data.get('amount')
+
+            # Check if the expense amount is greater than the bank balance
+            if transaction_amount > bank_balance:
+                # If the balance would become negative, show an error message
+                messages.error(self.request, "Expense amount cannot be greater than bank balance.")
+                return self.form_invalid(form)
         return super().form_valid(form)
 
 class TransactionUpdateView(LoginRequiredMixin, SuccessMessageMixin, UpdateView):

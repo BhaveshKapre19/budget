@@ -1,7 +1,10 @@
-# budget/admin.py
-
 from django.contrib import admin
-from .models import Category, Transaction
+from .models import Bank, Category, Transaction
+
+@admin.register(Bank)
+class BankAdmin(admin.ModelAdmin):
+    list_display = ('name', 'balance')
+    search_fields = ('name',)
 
 @admin.register(Category)
 class CategoryAdmin(admin.ModelAdmin):
