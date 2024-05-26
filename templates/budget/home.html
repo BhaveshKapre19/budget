@@ -3,18 +3,88 @@
 {% extends 'budget/base.html' %}
 {% load bootstrap5 %}
 {% block content %}
-<h2>Home</h2>
-<div>
+<div class="container mt-5">
+    <h2>Welcome, {{ username }}</h2>
+    <p>Email: {{ email }}</p>
     
-    <h3>Total Amount Spent in Last 30 Days: ₹ {{ total_spent_last_30_days }}</h3>
-</div>
-<div>
-    <h3>Recent Transactions</h3>
-    <ul>
+    <h3>Spending Overview (Last 30 days)</h3>
+    <canvas id="spendingChart" width="400" height="200"></canvas>
+
+    <h3 class="mt-5">Recent Transactions</h3>
+    <ul class="list-group">
         {% for transaction in recent_transactions %}
-        <li>{{ transaction.date }} - {{ transaction.category }} - {{ transaction.amount }}</li>
+        <li class="list-group-item d-flex justify-content-between align-items-center">
+            {{ transaction.date|date:"F d, Y" }} - {{ transaction.category }} - ₹{{ transaction.amount }}
+            <span class="badge {% if transaction.type == 'expense' %}bg-danger{% else %}bg-success{% endif %} rounded-pill">{{ transaction.type }}</span>
+        </li>
         {% endfor %}
     </ul>
+
+    <h3 class="mt-5">All Transactions</h3>
+    <form method="get" class="mb-3">
+        <div class="input-group">
+            <select name="filter" class="form-select" onchange="this.form.submit()">
+                <option value="">All</option>
+                <option value="income" {% if request.GET.filter == 'income' %}selected{% endif %}>Income</option>
+                <option value="expense" {% if request.GET.filter == 'expense' %}selected{% endif %}>Expense</option>
+            </select>
+        </div>
+    </form>
+
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Date</th>
+                <th>Category</th>
+                <th>Type</th>
+                <th>Amount</th>
+                <th>Description</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for transaction in transactions %}
+            <tr class="{% if transaction.type == 'expense' %}table-danger{% else %}table-success{% endif %}">
+                <td>{{ transaction.date }}</td>
+                <td>{{ transaction.category.name }}</td>
+                <td>{{ transaction.type }}</td>
+                <td>₹{{ transaction.amount }}</td>
+                <td>{{ transaction.description }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    
+    <a href="{% url 'export_pdf' %}" class="btn btn-primary">Export to PDF</a>
 </div>
-<!-- Add spending charts or any other content you want to display -->
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    const ctx = document.getElementById('spendingChart').getContext('2d');
+    const spendingChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: ['Spending', 'Income'],
+            datasets: [{
+                label: 'Amount',
+                data: [{{ total_spent_last_30_days }}, {{ total_income_last_30_days }}],
+                backgroundColor: [
+                    'rgba(255, 99, 132, 0.2)',
+                    'rgba(75, 192, 192, 0.2)'
+                ],
+                borderColor: [
+                    'rgba(255, 99, 132, 1)',
+                    'rgba(75, 192, 192, 1)'
+                ],
+                borderWidth: 1
+            }]
+        },
+        options: {
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            }
+        }
+    });
+</script>
 {% endblock %}
