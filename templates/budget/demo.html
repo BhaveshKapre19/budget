@@ -36,6 +36,7 @@
                     <td>{{ transaction.get_type_display }}</td>
                     <td>₹{{ transaction.amount }}</td>
                     <td>{{ transaction.description }}</td>
+                    <td>{{ transaction.remaining_balance }}</td>
                 </tr>
                 {% endfor %}
             </tbody>

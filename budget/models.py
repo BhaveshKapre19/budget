@@ -36,15 +36,19 @@ class Transaction(models.Model):
     amount = models.DecimalField(max_digits=10, decimal_places=2)
     date = models.DateTimeField()
     description = models.TextField(blank=True, null=True)
+    remaining_balance = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
 
     def __str__(self):
-        return f"{self.user.username} - {self.type} - {self.amount} - remaining balance = {self.bank.balance}"
-
+        return f"{self.user.username} - {self.type} - {self.amount} - remaining balance = {self.remaining_balance}"
 
 @receiver(pre_save, sender=Transaction)
 def check_balance_before_save(sender, instance, **kwargs):
     if instance.bank.balance < instance.amount:
         raise ValidationError("Insufficient balance.")
+    if instance.type == "expense" and instance.mode != 'cash':
+        instance.remaining_balance = instance.bank.balance - instance.amount
+    if instance.type == "income" and instance.mode != "cash":
+        instance.remaining_balance = instance.bank.balance + instance.amount
 
 @receiver(post_save, sender=Transaction)
 def update_balance_on_save(sender, instance, created, **kwargs):
@@ -61,7 +65,10 @@ def update_balance_on_save(sender, instance, created, **kwargs):
                 instance.bank.balance -= instance.amount
             if instance.type == "income" and instance.mode != "cash":
                 instance.bank.balance += instance.amount
+            
             instance.bank.save()
+
+
 
 @receiver(pre_delete, sender=Transaction)
 def update_balance_on_delete(sender, instance, **kwargs):
@@ -71,3 +78,4 @@ def update_balance_on_delete(sender, instance, **kwargs):
         elif instance.type == 'income':
             instance.bank.balance -= instance.amount  # Reverse the income
         instance.bank.save()
+    instance.remaining_balance = instance.bank.balance  # Update remaining balance
