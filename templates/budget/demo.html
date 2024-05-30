@@ -8,10 +8,10 @@
     <style>
         /* Custom styles here */
         .expense {
-            background-color: #f8d7da !important;
+            background-color: #f04b59 !important;
         }
         .income {
-            background-color: #d4edda !important;
+            background-color: #65e282 !important;
         }
     </style>
 </head>
@@ -24,18 +24,19 @@
                     <th>Date</th>
                     <th>Category</th>
                     <th>Type</th>
-                    <th>Amount</th>
                     <th>Description</th>
+                    <th>Amount</th>
+                    <th>Remaining Balance</th>
                 </tr>
             </thead>
             <tbody>
                 {% for transaction in transactions %}
-                <tr class="{% if transaction.type == 'expense' %}expense{% else %}income{% endif %}">
+                <tr class="{% if transaction.type == 'expense' %}bg-danger text-white{% else %}bg-success text-white{% endif %}">
                     <td>{{ transaction.date|date:"F d, Y" }}</td>
                     <td>{{ transaction.category.name }}</td>
                     <td>{{ transaction.get_type_display }}</td>
-                    <td>₹{{ transaction.amount }}</td>
                     <td>{{ transaction.description }}</td>
+                    <td>₹{{ transaction.amount }}</td>
                     <td>{{ transaction.remaining_balance }}</td>
                 </tr>
                 {% endfor %}
