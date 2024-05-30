@@ -16,6 +16,17 @@ from django.template.loader import get_template
 from xhtml2pdf import pisa
 
 
+class DemoView(TemplateView):
+    template_name = "budget/demo.html"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        transactions = Transaction.objects.all()
+        context['transactions'] = transactions
+        return context
+
+
+
 class HomeView(LoginRequiredMixin, TemplateView):
     template_name = 'budget/home.html'
     login_url = '/login/'  # Customize login URL if needed
@@ -136,3 +147,8 @@ class TransactionDeleteView(LoginRequiredMixin, SuccessMessageMixin, DeleteView)
     success_url = reverse_lazy('transaction-list')
     success_message = "Transaction deleted successfully."  # Custom success message
     login_url = '/login/'  # Customize login URL if needed
+
+
+
+
+
