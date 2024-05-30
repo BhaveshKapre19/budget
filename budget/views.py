@@ -6,7 +6,7 @@ from django.urls import reverse_lazy
 from django.shortcuts import redirect
 from django.views.generic import CreateView, ListView, UpdateView, DeleteView, TemplateView, View
 from .forms import UserRegisterForm, TransactionForm
-from .models import Transaction
+from .models import Transaction , Bank
 from django.contrib.auth import login as auth_login
 from django.db.models import Sum
 from django.utils import timezone
@@ -27,6 +27,7 @@ class HomeView(LoginRequiredMixin, TemplateView):
         # User Info
         context['username'] = user.username
         context['email'] = user.email
+        context['banks'] = Bank.objects.all()
 
         # Calculate total amount spent and earned in the last 30 days
         thirty_days_ago = timezone.now() - timedelta(days=30)

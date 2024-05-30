@@ -6,6 +6,25 @@
 <div class="container mt-5">
     <h2>Welcome, {{ username }}</h2>
     <p>Email: {{ email }}</p>
+
+    
+
+        <div class="container">
+            <div class="row">
+            {% for bank in banks %}
+                <div class="col-md-4">
+                    <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">{{bank.name}}</h5>
+                        <p class="card-text">Amount: {{bank.balance}}</p>
+                    </div>
+                </div>
+            {% endfor %}
+            </div>
+        </div>
+        <br>
+
+        
     
     <h3>Spending Overview (Last 30 days)</h3>
     <canvas id="spendingChart" width="400" height="200"></canvas>
@@ -44,7 +63,7 @@
         <tbody>
             {% for transaction in transactions %}
             <tr class="{% if transaction.type == 'expense' %}table-danger{% else %}table-success{% endif %}">
-                <td>{{ transaction.date }}</td>
+                <td>{{ transaction.date|date:"F d, Y" }}</td>
                 <td>{{ transaction.category.name }}</td>
                 <td>{{ transaction.type }}</td>
                 <td>₹{{ transaction.amount }}</td>
@@ -54,7 +73,8 @@
         </tbody>
     </table>
     
-    <a href="{% url 'export_pdf' %}" class="btn btn-primary">Export to PDF</a>
+    <a href="{% url 'export_pdf' %}" class="btn btn-primary p-2 mb-3">Export to PDF</a>
+    <a href="{% url 'transaction-create' %}" class="btn btn-primary p-2 mb-3">Add Expence</a>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
