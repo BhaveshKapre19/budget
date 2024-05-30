@@ -1,14 +1,14 @@
 from django.db import models
 from django.contrib.auth.models import User
-from django.core.exceptions import ValidationError
-from django.db.models.signals import post_save, pre_save, pre_delete
+from django.db.models.signals import post_save, pre_delete , pre_save
 from django.dispatch import receiver
+from django.forms import ValidationError
 
 class Bank(models.Model):
     name = models.CharField(max_length=50)
     balance = models.DecimalField(max_digits=10, decimal_places=2)
 
-    def __str__(self) -> str:
+    def __str__(self):
         return f"{self.name} - {self.balance}"
 
 class Category(models.Model):
@@ -40,63 +40,34 @@ class Transaction(models.Model):
     def __str__(self):
         return f"{self.user.username} - {self.type} - {self.amount} - remaining balance = {self.bank.balance}"
 
-class Statements(models.Model):
-    transaction = models.ForeignKey(Transaction, on_delete=models.DO_NOTHING)
-    bank = models.ForeignKey(Bank, on_delete=models.DO_NOTHING)
-    user = models.ForeignKey(User, on_delete=models.DO_NOTHING)
-    left_balance = models.DecimalField(max_digits=10, decimal_places=2)
-    description = models.TextField()
-    date = models.DateField(auto_now_add=True)
-
-    def __str__(self) -> str:
-        return f"Transaction: {self.transaction.amount} - Bank balance: {self.bank.balance} - Left balance: {self.left_balance}"
-
-@receiver(post_save, sender=Transaction)
-def transaction_post_save(sender, instance, created, **kwargs):
-    if created:
-        if instance.type == 'expense':
-            if instance.bank.balance >= instance.amount:
-                if instance.mode != 'cash':
-                    instance.bank.balance -= instance.amount
-                    instance.bank.save()
-                    Statements.objects.create(
-                        transaction=instance,
-                        bank=instance.bank,
-                        user=instance.user,
-                        left_balance=instance.bank.balance,
-                        description=f"Expense of {instance.amount} from {instance.bank.name}. New balance: {instance.bank.balance}"
-                    )
-            else:
-                raise ValidationError("Bank balance is too low for this expense.")
-        elif instance.type == 'income':
-            if instance.mode != 'cash':
-                instance.bank.balance += instance.amount
-                instance.bank.save()
-                Statements.objects.create(
-                    transaction=instance,
-                    bank=instance.bank,
-                    user=instance.user,
-                    left_balance=instance.bank.balance,
-                    description=f"Income of {instance.amount} to {instance.bank.name}. New balance: {instance.bank.balance}"
-                )
 
 @receiver(pre_save, sender=Transaction)
-def validate_expense_amount(sender, instance, **kwargs):
-    if instance.pk:
+def check_balance_before_save(sender, instance, **kwargs):
+    if instance.bank.balance < instance.amount:
+        raise ValidationError("Insufficient balance.")
+
+@receiver(post_save, sender=Transaction)
+def update_balance_on_save(sender, instance, created, **kwargs):
+    if created: 
         original_transaction = Transaction.objects.get(pk=instance.pk)
         if original_transaction.type != instance.type or original_transaction.amount != instance.amount:
             if original_transaction.type == 'expense' and original_transaction.mode != 'cash':
-                instance.bank.balance += original_transaction.amount
+                original_transaction.bank.balance += original_transaction.amount
             elif original_transaction.type == 'income' and original_transaction.mode != 'cash':
-                instance.bank.balance -= original_transaction.amount
-        instance.bank.save()
+                original_transaction.bank.balance -= original_transaction.amount
+            original_transaction.bank.save()
+        else:
+            if instance.type == "expense" and instance.mode != 'cash':
+                instance.bank.balance -= instance.amount
+            if instance.type == "income" and instance.mode != "cash":
+                instance.bank.balance += instance.amount
+            instance.bank.save()
 
 @receiver(pre_delete, sender=Transaction)
-def transaction_pre_delete(sender, instance, **kwargs):
-    if instance.type == 'expense':
-        if instance.mode != 'cash':
-            instance.bank.balance += instance.amount
-    elif instance.type == 'income':
-        if instance.mode != 'cash':
-            instance.bank.balance -= instance.amount
-    instance.bank.save()
+def update_balance_on_delete(sender, instance, **kwargs):
+    if instance.mode != 'cash':  # Exclude cash transactions
+        if instance.type == 'expense':
+            instance.bank.balance += instance.amount  # Reverse the expense
+        elif instance.type == 'income':
+            instance.bank.balance -= instance.amount  # Reverse the income
+        instance.bank.save()
